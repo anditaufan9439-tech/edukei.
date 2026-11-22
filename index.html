@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Jejak Evav 3D: Penjaga Kearifan Kepulauan Kei</title>
+  <meta name="description" content="Game edukasi interaktif 3D WebGL kearifan lokal budaya Kepulauan Kei (Evav): Hukum Adat Larvul Ngabal, Simulasi Sasi Laut, dan Gotong Royong Maren.">
+
+  <!-- PWA Manifest & Mobile Installable Support (Offline-Ready) -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#0284C7">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Jejak Evav 3D">
+  <link rel="apple-touch-icon" href="./icon-192.svg">
+  <link rel="icon" type="image/svg+xml" href="./icon-192.svg">
+
+  <!-- Google Fonts: Cinzel & Plus Jakarta Sans (dengan fallback sistem saat offline) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS Lokal (Offline-Ready) -->
+  <script src="./vendor/tailwindcss.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            sky: {
+              kei: '#E0F2FE'
+            },
+            sand: {
+              light: '#FFFDF7',
+              warm: '#FEF9EC',
+              border: '#E8DCB8'
+            },
+            ocean: {
+              kei: '#0284C7',
+              samudra: '#0369A1',
+              dark: '#0C4A6E'
+            },
+            adat: {
+              emas: '#D97706',
+              sirih: '#B91C1C'
+            },
+            eco: {
+              zamrud: '#059669'
+            }
+          },
+          fontFamily: {
+            cinzel: ['Cinzel', 'Georgia', 'serif'],
+            sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Three.js WebGL Library Lokal (r128, Offline-Ready) -->
+  <script src="./vendor/three.min.js"></script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-[#E0F2FE] text-slate-900 font-sans h-[100dvh] w-screen overflow-hidden select-none relative">
+  <!-- WADAH UTAMA RESPONSIF (OTOMATIS ROTASI 90DEG DI HP PORTRAIT) -->
+  <div id="app-shell">
+
+    <!-- IDENTITAS NAMA WEB "JEJAK EVAV 3D" (Z-INDEX PALING TINGGI + SAFE AREA) -->
+    <div id="floating-brand-badge" onclick="returnToHub3D()" style="top: max(18px, env(safe-area-inset-top)); left: max(18px, env(safe-area-inset-left));" class="absolute z-[60] flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-[#FFFDF7]/95 border-2 border-[#D97706] shadow-lg cursor-pointer">
+      <span class="text-base sm:text-lg leading-none">⛵</span>
+      <span class="text-xs sm:text-sm font-black font-cinzel text-[#0C4A6E] tracking-wide whitespace-nowrap">Jejak Evav 3D</span>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- 1. DUNIA HUB 3D INTERAKTIF (THREE.JS WEBGL VIEWPORT)     -->
+    <!-- ======================================================== -->
+    <div id="webgl-container" class="absolute inset-0 z-0"></div>
+
+    <!-- ======================================================== -->
+    <!-- 2. SPLASH SCREEN VIDEO OPENING OTOMATIS (LIGHT MODE)     -->
+    <!-- ======================================================== -->
+    <div id="splash-screen" class="absolute inset-0 z-50 w-full h-full bg-gradient-to-b from-[#E0F2FE] via-[#FFFDF7] to-[#FEF9EC] transition-opacity duration-700 overflow-hidden">
+      <div id="splash-video-stage">
+        <video
+          id="opening-video"
+          src="https://www.image2url.com/r2/default/videos/1795233105281-7ee60934-8c2b-4b2a-80c6-da4f3e955c50.mp4"
+          autoplay
+          muted
+          playsinline
+          webkit-playsinline
+          preload="auto">
+        </video>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- 3. HEADER & HUD NAVIGASI DUNIA 3D (OUTDOOR LIGHT MODE)   -->
+    <!-- ======================================================== -->
+    <header class="absolute top-0 inset-x-0 z-30 bg-[#FFFDF7]/95 border-b-2 border-adat-emas shadow-md">
+      <div class="w-full h-2 tenun-pattern-bar"></div>
+      <div class="max-w-7xl mx-auto pl-44 sm:pl-52 pr-2.5 sm:px-6 py-2 compact-hud-header flex items-center justify-between gap-2">
+        <!-- Status Peringkat (Nama web tetap tampil di #floating-brand-badge z-[60]) -->
+        <div class="hidden sm:flex items-center gap-2 shrink-0">
+          <p id="hud-rank-label" class="text-[11px] font-bold text-adat-emas truncate max-w-[160px]">Penjelajah Kei</p>
+        </div>
+
+        <!-- Fast-Travel Pulau Misi 3D (Desktop & Tablet Besar) -->
+        <div class="hidden xl:flex items-center gap-2 bg-[#FEF9EC] px-2.5 py-1.5 rounded-2xl border border-sand-border">
+          <span class="text-[11px] font-extrabold text-slate-600 px-1">Fast-Travel 3D:</span>
+          <button onclick="triggerFastTravel('island1')" class="px-3 py-1 rounded-xl bg-red-50 hover:bg-adat-sirih hover:text-white text-adat-sirih border border-red-300 font-extrabold text-xs transition">
+            1. Pulau Larvul Ngabal
+          </button>
+          <button onclick="triggerFastTravel('island2')" class="px-3 py-1 rounded-xl bg-emerald-50 hover:bg-eco-zamrud hover:text-white text-eco-zamrud border border-emerald-300 font-extrabold text-xs transition">
+            2. Teluk Sasi Laut
+          </button>
+          <button onclick="triggerFastTravel('island3')" class="px-3 py-1 rounded-xl bg-amber-50 hover:bg-adat-emas hover:text-white text-adat-emas border border-amber-300 font-extrabold text-xs transition">
+            3. Kampung Maren
+          </button>
+        </div>
+
+        <!-- Skor, Instal Offline, Profil Pulau Kei, Audio, Lencana & Sertifikat -->
+        <div class="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar ml-auto">
+          <button id="btn-install-pwa" onclick="installPWA()" class="hidden px-2.5 py-1.5 rounded-xl bg-eco-zamrud hover:bg-emerald-700 text-white text-[11px] sm:text-xs font-extrabold flex items-center gap-1 shadow-sm transition shrink-0">
+            <span>📲</span>
+            <span class="hidden sm:inline">Instal App</span>
+          </button>
+
+          <a href="https://www.youtube.com/watch?v=kckGMgtly5o" target="_blank" rel="noopener noreferrer" class="px-2 sm:px-3 py-1.5 rounded-xl bg-[#D97706] hover:bg-amber-700 text-white text-[11px] sm:text-xs font-extrabold flex items-center gap-1 shadow-sm transition shrink-0">
+            <span>🏝️</span>
+            <span class="hidden md:inline">Profil Pulau Kei</span>
+          </a>
+
+          <div class="px-2 sm:px-2.5 py-1.5 rounded-xl bg-[#FEF9EC] border border-adat-emas/50 text-[11px] sm:text-xs font-extrabold text-ocean-dark shrink-0">
+            <span class="hidden sm:inline">Skor: </span><span id="hud-total-score" class="text-adat-emas font-black">0</span>
+          </div>
+
+          <button id="btn-toggle-audio" title="Penguat Suara Web Audio API" class="px-2 sm:px-3 py-1.5 rounded-xl bg-sky-100 hover:bg-sky-200 border-2 border-[#0284C7] text-[#0C4A6E] text-[11px] sm:text-xs font-black flex items-center gap-1 shadow-sm transition shrink-0">
+            <span id="audio-icon" class="text-xs sm:text-sm">🔊</span>
+            <span id="audio-label" class="hidden sm:inline">Suara: Maks (100%)</span>
+          </button>
+
+          <button onclick="openBadgesModal()" class="px-2 sm:px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 border-2 border-adat-emas text-amber-950 text-[11px] sm:text-xs font-extrabold flex items-center gap-1 shadow-sm transition shrink-0">
+            <span>🏅</span>
+            <span id="hud-badge-count">0/4</span>
+          </button>
+
+          <button onclick="openCertificateModal()" class="px-2 sm:px-3 py-1.5 rounded-xl bg-ocean-kei hover:bg-ocean-samudra text-white text-[11px] sm:text-xs font-extrabold flex items-center gap-1 shadow-sm transition shrink-0">
+            <span>📜</span>
+            <span class="hidden sm:inline">Sertifikat</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ======================================================== -->
+    <!-- 4. HUD OVERLAY DUNIA 3D (D-PAD, FAST TRAVEL, PROXIMITY)  -->
+    <!-- ======================================================== -->
+    <div id="hud-overlay" class="absolute inset-0 z-20 pointer-events-none flex flex-col justify-between pt-16 sm:pt-20 pb-2 sm:pb-4 px-3 sm:px-6 safe-bottom-pad">
+    <!-- Baris Atas HUD: Fast Travel Mobile/Tablet & Petunjuk Suar 3D -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div class="outdoor-panel px-3 sm:px-4 py-1.5 sm:py-2 rounded-2xl pointer-events-auto flex items-center gap-2 text-[11px] sm:text-xs font-bold text-ocean-dark">
+        <span>🧭</span>
+        <span>Arahkan <strong>Perahu Belang 3D</strong> ke Pulau atau klik <strong>Suar 3D</strong>!</span>
+      </div>
+
+      <!-- Tombol Fast-Travel Mobile & Tablet -->
+      <div class="flex xl:hidden flex-wrap justify-center gap-1.5 pointer-events-auto">
+        <button onclick="triggerFastTravel('island1')" class="px-2.5 py-1.5 rounded-xl bg-[#FFFDF7] border-2 border-adat-sirih text-adat-sirih font-extrabold text-[11px] shadow">
+          ⚖️ 1. Larvul
+        </button>
+        <button onclick="triggerFastTravel('island2')" class="px-2.5 py-1.5 rounded-xl bg-[#FFFDF7] border-2 border-eco-zamrud text-eco-zamrud font-extrabold text-[11px] shadow">
+          🌿 2. Sasi
+        </button>
+        <button onclick="triggerFastTravel('island3')" class="px-2.5 py-1.5 rounded-xl bg-[#FFFDF7] border-2 border-adat-emas text-adat-emas font-extrabold text-[11px] shadow">
+          🤝 3. Maren
+        </button>
+      </div>
+    </div>
+
+    <!-- Prompt Saat Perahu Dekat Pulau Misi -->
+    <div id="island-proximity-prompt" class="hidden self-center outdoor-panel px-6 py-4 rounded-3xl pointer-events-auto text-center max-w-md animate-bounce">
+      <span class="text-[10px] font-extrabold uppercase tracking-widest text-adat-emas bg-amber-100 px-2.5 py-0.5 rounded-full">
+        ⚓ Dermaga Pulau Tercapai
+      </span>
+      <h4 id="proximity-island-name" class="text-lg font-black font-cinzel text-ocean-dark mt-1">
+        Pulau 1: Balai Adat Larvul Ngabal
+      </h4>
+      <p id="proximity-island-sub" class="text-xs text-slate-600 font-semibold mb-3">
+        Sidang Musyawarah & Studi Kasus Adat
+      </p>
+      <button onclick="enterNearbyIsland()" class="w-full py-2.5 rounded-xl bg-ocean-kei hover:bg-ocean-samudra text-white font-extrabold text-xs uppercase tracking-wider shadow-md transition">
+        Masuk ke Pulau Misi (Tekan ENTER)
+      </button>
+    </div>
+
+    <!-- Baris Bawah HUD: Virtual D-Pad Sentuh & Info Rekor High Score -->
+    <div class="flex items-end justify-between gap-4">
+      <!-- Virtual D-Pad Sentuh (Mobile / Tablet / Mouse) -->
+      <div class="outdoor-panel p-2.5 rounded-3xl pointer-events-auto flex flex-col items-center gap-1.5">
+        <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Kemudi Belang</span>
+        <button
+          onpointerdown="World3D.setDPad('forward', true)"
+          onpointerup="World3D.setDPad('forward', false)"
+          onpointerleave="World3D.setDPad('forward', false)"
+          class="dpad-btn w-11 h-11 rounded-2xl bg-[#FEF9EC] border-2 border-ocean-kei text-ocean-dark font-black text-base flex items-center justify-center shadow-sm">
+          ▲
+        </button>
+        <div class="flex items-center gap-1.5">
+          <button
+            onpointerdown="World3D.setDPad('left', true)"
+            onpointerup="World3D.setDPad('left', false)"
+            onpointerleave="World3D.setDPad('left', false)"
+            class="dpad-btn w-11 h-11 rounded-2xl bg-[#FEF9EC] border-2 border-ocean-kei text-ocean-dark font-black text-base flex items-center justify-center shadow-sm">
+            ◀
+          </button>
+          <button
+            onpointerdown="World3D.setDPad('backward', true)"
+            onpointerup="World3D.setDPad('backward', false)"
+            onpointerleave="World3D.setDPad('backward', false)"
+            class="dpad-btn w-11 h-11 rounded-2xl bg-[#FEF9EC] border-2 border-ocean-kei text-ocean-dark font-black text-base flex items-center justify-center shadow-sm">
+            ▼
+          </button>
+          <button
+            onpointerdown="World3D.setDPad('right', true)"
+            onpointerup="World3D.setDPad('right', false)"
+            onpointerleave="World3D.setDPad('right', false)"
+            class="dpad-btn w-11 h-11 rounded-2xl bg-[#FEF9EC] border-2 border-ocean-kei text-ocean-dark font-black text-base flex items-center justify-center shadow-sm">
+            ▶
+          </button>
+        </div>
+      </div>
+
+      <!-- Keterangan Pembuat: Tim Edukei Studio -->
+      <div class="outdoor-panel px-3 py-1.5 rounded-2xl pointer-events-auto text-center self-end">
+        <p class="text-[10px] sm:text-xs font-extrabold text-ocean-dark">
+          Game ini dibuat oleh <span class="text-adat-emas font-black">Tim Edukei Studio</span>
+        </p>
+      </div>
+
+      <!-- Papan Rekor High Score Cepat -->
+      <div class="outdoor-panel p-3.5 rounded-3xl pointer-events-auto hidden sm:block min-w-[230px]">
+        <div class="flex items-center justify-between border-b border-sand-border pb-1.5 mb-2">
+          <span class="text-[11px] font-black font-cinzel text-ocean-dark">🏆 REKOR SKOR TERTINGGI</span>
+          <span class="text-[10px] font-bold text-adat-emas">LocalStorage</span>
+        </div>
+        <div class="space-y-1 text-xs font-bold">
+          <div class="flex justify-between">
+            <span class="text-slate-600">1. Larvul Ngabal:</span>
+            <span id="hs-larvul" class="text-adat-sirih font-black">0</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-600">2. Teluk Sasi Laut:</span>
+            <span id="hs-sasi" class="text-eco-zamrud font-black">0</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-600">3. Kampung Maren:</span>
+            <span id="hs-maren" class="text-adat-emas font-black">0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 5. PULAU 1: BALAI ADAT LARVUL NGABAL (22 KASUS ACAK)     -->
+  <!-- ======================================================== -->
+  <div id="modal-island1" class="absolute inset-0 z-40 hidden flex items-center justify-center p-3 sm:p-6 bg-black/35 backdrop-blur-[2px] overflow-y-auto modal-scroll-area">
+    <div class="outdoor-panel rounded-3xl max-w-3xl w-full p-5 sm:p-7 relative my-auto max-h-[92vh] overflow-y-auto">
+      <div class="w-full h-2 rounded-full tenun-pattern-bar mb-4"></div>
+
+      <!-- Header Pulau 1 & Pilihan Tingkat Kesulitan -->
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div>
+          <span class="text-[11px] font-extrabold uppercase tracking-wider text-adat-sirih bg-red-100 px-2.5 py-0.5 rounded-md border border-red-300">
+            Pulau 1 • Sidang Musyawarah Tuan Tan / Rat
+          </span>
+          <h3 class="text-xl sm:text-2xl font-black font-cinzel text-ocean-dark mt-1">
+            Balai Adat Larvul Ngabal
+          </h3>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Selector 3 Tingkat Kesulitan -->
+          <select id="larvul-diff-select" onchange="changeLarvulDifficulty(this.value)" class="px-3 py-1.5 rounded-xl bg-[#FEF9EC] border-2 border-adat-emas text-ocean-dark font-extrabold text-xs">
+            <option value="pemula">Tingkat: Pemula (5 Kasus • 30d)</option>
+            <option value="penjaga" selected>Tingkat: Penjaga Adat (6 Kasus • 22d)</option>
+            <option value="sesepuh">Tingkat: Sesepuh Evav (7 Kasus • 16d)</option>
+          </select>
+
+          <button onclick="returnToHub3D()" class="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-extrabold text-xs">
+            ✕ Keluar
+          </button>
+        </div>
+      </div>
+
+      <!-- Bar Info Timer, Streak Kombo, & Skor -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4">
+        <div class="bg-[#FEF9EC] p-2.5 rounded-2xl border border-sand-border text-center">
+          <span class="text-[10px] font-bold text-slate-500 block">Sidang Kasus</span>
+          <span class="text-sm font-black text-ocean-dark"><span id="larvul-case-num">1</span> / <span id="larvul-case-total">6</span></span>
+        </div>
+        <div class="bg-[#FEF9EC] p-2.5 rounded-2xl border border-sand-border text-center">
+          <span class="text-[10px] font-bold text-slate-500 block">Waktu Musyawarah</span>
+          <span id="larvul-timer-text" class="text-sm font-black font-mono text-adat-sirih">22s</span>
+        </div>
+        <div class="bg-amber-50 p-2.5 rounded-2xl border border-amber-300 text-center">
+          <span class="text-[10px] font-bold text-amber-800 block">Kombo Kebijaksanaan</span>
+          <span id="larvul-combo-badge" class="text-sm font-black text-adat-emas">1x Normal</span>
+        </div>
+        <div class="bg-sky-50 p-2.5 rounded-2xl border border-sky-300 text-center">
+          <span class="text-[10px] font-bold text-ocean-samudra block">Skor Sidang</span>
+          <span id="larvul-score-text" class="text-sm font-black text-ocean-kei">0</span>
+        </div>
+      </div>
+
+      <!-- Progress Bar Timer -->
+      <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden mb-4">
+        <div id="larvul-timer-bar" class="h-full bg-gradient-to-r from-eco-zamrud via-adat-emas to-adat-sirih transition-all duration-200" style="width: 100%;"></div>
+      </div>
+
+      <!-- Box Kasus Dilema Adat -->
+      <div class="bg-[#FEF9EC] rounded-2xl p-4 sm:p-5 border-2 border-sand-border mb-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <span id="larvul-pillar-tag" class="px-2.5 py-0.5 rounded bg-red-100 text-adat-sirih font-extrabold text-xs border border-red-200">
+            Nevit 7
+          </span>
+          <span id="larvul-secret-tag" class="hidden px-2.5 py-0.5 rounded bg-amber-300 text-amber-950 font-black text-xs animate-pulse">
+            👑 KASUS RAHASIA SESEPUH (BONUS +50)
+          </span>
+        </div>
+        <h4 id="larvul-case-title" class="text-base sm:text-lg font-black font-cinzel text-ocean-dark mb-1.5">
+          Judul Sengketa Adat
+        </h4>
+        <p id="larvul-case-desc" class="text-xs sm:text-sm text-slate-800 font-medium leading-relaxed"></p>
+      </div>
+
+      <!-- Pilihan Keputusan Hakim Adat -->
+      <div id="larvul-options-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-4"></div>
+
+      <!-- Feedback Edukatif & Tombol Kasus Rahasia -->
+      <div id="larvul-feedback-box" class="hidden rounded-2xl p-4 border-2 mb-2">
+        <div class="flex items-start gap-3">
+          <span id="larvul-fb-icon" class="text-2xl">⚖️</span>
+          <div class="flex-grow">
+            <h5 id="larvul-fb-title" class="text-sm font-black font-cinzel">Putusan Sidang</h5>
+            <p id="larvul-fb-text" class="text-xs text-slate-800 font-medium mt-1 leading-relaxed"></p>
+          </div>
+        </div>
+        <div class="mt-3 flex flex-wrap items-center justify-end gap-2">
+          <button id="btn-larvul-secret" onclick="triggerSecretElderCase()" class="hidden px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-xs shadow-md">
+            👑 Buka Kasus Rahasia Sesepuh!
+          </button>
+          <button id="btn-larvul-next" onclick="nextLarvulCase()" class="px-5 py-2 rounded-xl bg-ocean-kei hover:bg-ocean-samudra text-white font-extrabold text-xs shadow-md">
+            Kasus Berikutnya →
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 6. PULAU 2: TELUK SASI LAUT EVAV (SIMULASI 3D 6 MUSIM)   -->
+  <!-- ======================================================== -->
+  <div id="modal-island2" class="absolute inset-x-0 bottom-0 sm:inset-0 z-40 hidden flex items-end sm:items-center justify-end p-2.5 sm:p-6 pointer-events-none safe-bottom-pad">
+    <!-- Panel ditempatkan di sisi kanan (desktop) / bawah (mobile) agar Teluk Sasi 3D tetap terlihat langsung! -->
+    <div class="outdoor-panel rounded-3xl max-w-xl w-full p-4 sm:p-6 pointer-events-auto max-h-[62dvh] sm:max-h-[90dvh] overflow-y-auto modal-scroll-area">
+      <div class="w-full h-2 rounded-full tenun-pattern-bar mb-3"></div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div>
+          <span class="text-[10px] font-extrabold uppercase tracking-wider text-eco-zamrud bg-emerald-100 px-2.5 py-0.5 rounded border border-emerald-300">
+            Pulau 2 • Simulasi Ekosistem 3D Live
+          </span>
+          <h3 class="text-lg sm:text-xl font-black font-cinzel text-ocean-dark">
+            Teluk Sasi Laut Evav
+          </h3>
+        </div>
+
+        <div class="flex items-center gap-1.5">
+          <select id="sasi-diff-select" onchange="changeSasiDifficulty(this.value)" class="px-2.5 py-1.5 rounded-xl bg-[#FEF9EC] border-2 border-eco-zamrud text-ocean-dark font-extrabold text-xs">
+            <option value="pemula">Pemula</option>
+            <option value="penjaga" selected>Penjaga Adat</option>
+            <option value="sesepuh">Sesepuh Evav</option>
+          </select>
+          <button onclick="returnToHub3D()" class="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-extrabold text-xs">
+            ✕ Keluar
+          </button>
+        </div>
+      </div>
+
+      <!-- Info Musim & Kejadian Acak (Random Event) -->
+      <div class="bg-[#FEF9EC] rounded-2xl p-3.5 border-2 border-sand-border mb-3">
+        <div class="flex items-center justify-between text-xs font-extrabold mb-1">
+          <span id="sasi-season-name" class="text-ocean-kei">Musim 1 / 6 • Angin Timur</span>
+          <span id="sasi-streak-badge" class="px-2 py-0.5 rounded bg-amber-100 text-adat-emas">Harmoni: 1x</span>
+        </div>
+        <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-300 text-xs">
+          <strong id="sasi-event-headline" class="text-amber-950 block font-extrabold">📢 Peristiwa Musim Ini:</strong>
+          <span id="sasi-event-detail" class="text-slate-700 font-medium"></span>
+        </div>
+      </div>
+
+      <!-- Indikator Keseimbangan Ganda: Ekosistem 3D vs Kesejahteraan Pangan -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+        <div class="bg-emerald-50/90 p-3 rounded-2xl border border-emerald-300">
+          <div class="flex justify-between text-xs font-extrabold text-emerald-950 mb-1">
+            <span>🪸 Ekosistem Laut 3D</span>
+            <span id="sasi-eco-val">80%</span>
+          </div>
+          <div class="w-full h-3 bg-white rounded-full overflow-hidden border border-emerald-300">
+            <div id="sasi-eco-bar" class="h-full bg-eco-zamrud transition-all duration-500" style="width: 80%;"></div>
+          </div>
+          <span id="sasi-water-status" class="text-[10px] font-bold text-emerald-800 mt-1 block">Air Laut 3D: Jernih & Ikan Melimpah</span>
+        </div>
+
+        <div class="bg-amber-50/90 p-3 rounded-2xl border border-amber-300">
+          <div class="flex justify-between text-xs font-extrabold text-amber-950 mb-1">
+            <span>🍚 Kesejahteraan Pangan</span>
+            <span id="sasi-food-val">75%</span>
+          </div>
+          <div class="w-full h-3 bg-white rounded-full overflow-hidden border border-amber-300">
+            <div id="sasi-food-bar" class="h-full bg-adat-emas transition-all duration-500" style="width: 75%;"></div>
+          </div>
+          <span id="sasi-food-status" class="text-[10px] font-bold text-amber-800 mt-1 block">Pangan Kampung: Tercukupi</span>
+        </div>
+      </div>
+
+      <!-- Keputusan Bum-it untuk 3 Komoditas Laut 3D -->
+      <div class="space-y-2 mb-4">
+        <div class="flex items-center justify-between text-xs font-extrabold text-slate-700">
+          <span>Atur Status Sasi Komoditas Teluk:</span>
+          <div class="flex gap-1.5">
+            <button onclick="setAllSasiCommodities('tutup')" class="px-2.5 py-1 rounded-lg bg-red-100 hover:bg-red-200 text-adat-sirih font-extrabold">🌿 Tutup Semua</button>
+            <button onclick="setAllSasiCommodities('buka')" class="px-2.5 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-eco-zamrud font-extrabold">⛵ Buka Semua</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <!-- Ikan Lompa -->
+          <div class="p-2.5 rounded-2xl bg-[#FEF9EC] border border-sand-border text-center">
+            <div class="text-xl">🐟</div>
+            <div class="text-xs font-black text-ocean-dark">Ikan Lompa</div>
+            <div id="sasi-pop-lompa" class="text-[10px] font-bold text-slate-600 mb-1.5">Populasi: 85%</div>
+            <button id="btn-sasi-lompa" onclick="cycleSasiCommodity('lompa')" class="w-full py-1.5 rounded-xl font-extrabold text-[11px] bg-red-600 text-white shadow-sm">
+              🌿 TUTUP SASI
+            </button>
+          </div>
+
+          <!-- Teripang -->
+          <div class="p-2.5 rounded-2xl bg-[#FEF9EC] border border-sand-border text-center">
+            <div class="text-xl">🥒</div>
+            <div class="text-xs font-black text-ocean-dark">Teripang</div>
+            <div id="sasi-pop-teripang" class="text-[10px] font-bold text-slate-600 mb-1.5">Populasi: 80%</div>
+            <button id="btn-sasi-teripang" onclick="cycleSasiCommodity('teripang')" class="w-full py-1.5 rounded-xl font-extrabold text-[11px] bg-red-600 text-white shadow-sm">
+              🌿 TUTUP SASI
+            </button>
+          </div>
+
+          <!-- Kerang Lola -->
+          <div class="p-2.5 rounded-2xl bg-[#FEF9EC] border border-sand-border text-center">
+            <div class="text-xl">🐚</div>
+            <div class="text-xs font-black text-ocean-dark">Kerang Lola</div>
+            <div id="sasi-pop-lola" class="text-[10px] font-bold text-slate-600 mb-1.5">Populasi: 75%</div>
+            <button id="btn-sasi-lola" onclick="cycleSasiCommodity('lola')" class="w-full py-1.5 rounded-xl font-extrabold text-[11px] bg-red-600 text-white shadow-sm">
+              🌿 TUTUP SASI
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <button id="btn-sasi-advance" onclick="advanceSasiSeason3D()" class="w-full py-3 rounded-2xl bg-eco-zamrud hover:bg-emerald-700 text-white font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg transition">
+        Jalankan Keputusan Musim Ini →
+      </button>
+
+      <!-- Laporan Akhir Musim ke-6 -->
+      <div id="sasi-result-box" class="hidden mt-3 p-4 rounded-2xl bg-amber-50 border-2 border-adat-emas text-center">
+        <h4 id="sasi-rank-title" class="text-base font-black font-cinzel text-ocean-dark">Peringkat Panen</h4>
+        <p id="sasi-rank-desc" class="text-xs text-slate-700 font-semibold mt-1 mb-3"></p>
+        <div class="flex gap-2">
+          <button onclick="initSasi3DGame()" class="flex-1 py-2 rounded-xl bg-ocean-kei text-white font-extrabold text-xs">Main Lagi (Acak Musim Baru)</button>
+          <button onclick="returnToHub3D()" class="flex-1 py-2 rounded-xl bg-slate-200 text-slate-800 font-extrabold text-xs">Kembali ke Laut 3D</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 7. PULAU 3: KAMPUNG MAREN & AIN NI AIN (TIME ATTACK 60s) -->
+  <!-- ======================================================== -->
+  <div id="modal-island3" class="absolute inset-0 z-40 hidden flex items-center justify-center p-3 sm:p-6 bg-black/35 backdrop-blur-[2px] overflow-y-auto modal-scroll-area">
+    <div class="outdoor-panel rounded-3xl max-w-3xl w-full p-5 sm:p-7 relative my-auto max-h-[92vh] overflow-y-auto">
+      <div class="w-full h-2 rounded-full tenun-pattern-bar mb-4"></div>
+
+      <!-- Header Pulau 3 -->
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div>
+          <span class="text-[11px] font-extrabold uppercase tracking-wider text-adat-emas bg-amber-100 px-2.5 py-0.5 rounded border border-amber-300">
+            Pulau 3 • Serangan Waktu (Time Attack) & Tantangan Harian
+          </span>
+          <h3 class="text-xl sm:text-2xl font-black font-cinzel text-ocean-dark mt-1">
+            Kampung Maren & Ain Ni Ain
+          </h3>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <select id="maren-diff-select" onchange="changeMarenDifficulty(this.value)" class="px-2.5 py-1.5 rounded-xl bg-[#FEF9EC] border-2 border-adat-emas text-ocean-dark font-extrabold text-xs">
+            <option value="pemula">Pemula (75 Detik)</option>
+            <option value="penjaga" selected>Penjaga Adat (60 Detik)</option>
+            <option value="sesepuh">Sesepuh Evav (45 Detik)</option>
+            <option value="harian">🌟 Tantangan Harian</option>
+          </select>
+          <button onclick="returnToHub3D()" class="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-extrabold text-xs">
+            ✕ Keluar
+          </button>
+        </div>
+      </div>
+
+      <!-- Bar Timer 60 Detik, Meteran Semangat Ain Ni Ain, & Skor -->
+      <div class="grid grid-cols-3 gap-2.5 mb-3">
+        <div class="bg-[#FEF9EC] p-2.5 rounded-2xl border border-sand-border text-center">
+          <span class="text-[10px] font-bold text-slate-500 block">Sisa Waktu</span>
+          <span id="maren-timer-text" class="text-base font-black font-mono text-adat-sirih">60s</span>
+        </div>
+        <div class="bg-amber-50 p-2.5 rounded-2xl border border-amber-300 text-center">
+          <span class="text-[10px] font-bold text-amber-900 block">Streak Cepat</span>
+          <span id="maren-streak-text" class="text-base font-black text-adat-emas">0x 🔥</span>
+        </div>
+        <div class="bg-sky-50 p-2.5 rounded-2xl border border-sky-300 text-center">
+          <span class="text-[10px] font-bold text-ocean-samudra block">Skor Maren</span>
+          <span id="maren-score-text" class="text-base font-black text-ocean-kei">0</span>
+        </div>
+      </div>
+
+      <!-- Meteran Semangat Ain Ni Ain (Memicu Kembang Api 3D & Tifa) -->
+      <div class="mb-4 bg-[#FEF9EC] p-3 rounded-2xl border border-sand-border">
+        <div class="flex justify-between items-center text-xs font-extrabold mb-1">
+          <span class="text-ocean-dark">🎆 Meteran Semangat "Ain Ni Ain" (Penuh = Kembang Api 3D & Tabuhan Tifa)</span>
+          <span id="ain-meter-pct" class="text-adat-emas">0%</span>
+        </div>
+        <div class="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
+          <div id="ain-meter-bar" class="h-full bg-gradient-to-r from-adat-emas via-amber-400 to-eco-zamrud transition-all duration-300" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <!-- Kontainer Tantangan Dinamis (Pepatah / Urutan Prosesi Budaya / Tebak Artefak 3D Berotasi) -->
+      <div class="bg-[#FEF9EC] rounded-2xl p-4 sm:p-5 border-2 border-sand-border mb-4">
+        <span id="maren-challenge-type" class="inline-block px-2.5 py-0.5 rounded bg-amber-100 text-adat-emas font-extrabold text-xs mb-2">
+          Tantangan Budaya
+        </span>
+        <h4 id="maren-question-title" class="text-base sm:text-lg font-black font-cinzel text-ocean-dark mb-3">
+          Pertanyaan Budaya
+        </h4>
+
+        <!-- Kanvas Khusus Artefak 3D Berotasi (Muncul saat tipe soal = Artefak 3D) -->
+        <div id="artifact-3d-wrapper" class="hidden w-full h-48 rounded-2xl overflow-hidden border-2 border-ocean-kei bg-sky-100 mb-3 relative">
+          <canvas id="artifact-3d-canvas" class="w-full h-full block"></canvas>
+          <span class="absolute bottom-2 right-3 px-2.5 py-0.5 rounded bg-white/90 text-[10px] font-extrabold text-ocean-dark">
+            🔄 Artefak 3D Berotasi Real-Time
+          </span>
+        </div>
+
+        <!-- Area Urutan Prosesi Budaya (Muncul saat tipe soal = Urutan Prosesi) -->
+        <div id="maren-sequence-progress" class="hidden mb-3 p-2.5 rounded-xl bg-white border border-sand-border text-xs font-bold text-slate-700">
+          Klik langkah secara berurutan dari <strong>Langkah 1 hingga 4</strong>: <span id="sequence-step-indicator" class="text-ocean-kei">0 / 4</span>
+        </div>
+
+        <!-- Pilihan Jawaban / Kartu Langkah -->
+        <div id="maren-options-area" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
+      </div>
+
+      <!-- Hasil Akhir Time Attack -->
+      <div id="maren-gameover-box" class="hidden p-4 rounded-2xl bg-emerald-50 border-2 border-eco-zamrud text-center">
+        <h4 class="text-lg font-black font-cinzel text-ocean-dark">🎉 Perayaan Kampung Maren Selesai!</h4>
+        <p id="maren-final-summary" class="text-xs text-slate-700 font-bold mt-1 mb-3"></p>
+        <div class="flex justify-center gap-3">
+          <button onclick="startMarenTimeAttack()" class="px-5 py-2.5 rounded-xl bg-adat-emas hover:bg-amber-600 text-white font-extrabold text-xs shadow">
+            🔄 Main Putaran Baru (Soal Diacak)
+          </button>
+          <button onclick="returnToHub3D()" class="px-5 py-2.5 rounded-xl bg-ocean-kei text-white font-extrabold text-xs shadow">
+            ⛵ Kembali ke Laut 3D
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 8. MODAL 4 LENCANA ADAT KEI                              -->
+  <!-- ======================================================== -->
+  <div id="modal-badges" class="absolute inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto modal-scroll-area">
+    <div class="outdoor-panel rounded-3xl max-w-2xl w-full p-6 sm:p-8 relative max-h-[90vh] overflow-y-auto">
+      <button onclick="closeBadgesModal()" class="absolute top-5 right-5 px-3 py-1 rounded-lg bg-slate-200 hover:bg-slate-300 font-bold text-xs">✕</button>
+
+      <div class="text-center mb-6">
+        <div class="w-14 h-14 rounded-2xl bg-amber-100 border-2 border-adat-emas mx-auto flex items-center justify-center text-2xl mb-2">🏅</div>
+        <h3 class="text-2xl font-black font-cinzel text-ocean-dark">4 Lencana Kehormatan Adat Kei</h3>
+        <p class="text-xs text-slate-600 font-semibold">Raih skor terbaik di setiap pulau misi untuk membuka seluruh gelar adat Evav</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div id="badge-card-larvul" class="p-4 rounded-2xl border-2 border-slate-300 bg-slate-100 opacity-60 transition">
+          <div class="flex items-center gap-3">
+            <div class="badge-icon-wrap w-12 h-12 rounded-xl bg-slate-200 flex items-center justify-center text-2xl">⚖️</div>
+            <div>
+              <h5 class="text-sm font-black font-cinzel text-ocean-dark">Ahli Larvul Ngabal</h5>
+              <span class="badge-status text-[10px] font-extrabold text-slate-500 uppercase">Terkunci</span>
+            </div>
+          </div>
+          <p class="text-xs text-slate-700 mt-2">Menyelesaikan sidang musyawarah Pulau 1 dengan skor minimal 120 poin.</p>
+        </div>
+
+        <div id="badge-card-sasi" class="p-4 rounded-2xl border-2 border-slate-300 bg-slate-100 opacity-60 transition">
+          <div class="flex items-center gap-3">
+            <div class="badge-icon-wrap w-12 h-12 rounded-xl bg-slate-200 flex items-center justify-center text-2xl">🌿</div>
+            <div>
+              <h5 class="text-sm font-black font-cinzel text-ocean-dark">Penjaga Sasi Laut</h5>
+              <span class="badge-status text-[10px] font-extrabold text-slate-500 uppercase">Terkunci</span>
+            </div>
+          </div>
+          <p class="text-xs text-slate-700 mt-2">Mencapai akhir musim ke-6 dengan Ekosistem Laut &gt;= 70% dan Pangan Warga &gt;= 70%.</p>
+        </div>
+
+        <div id="badge-card-ain" class="p-4 rounded-2xl border-2 border-slate-300 bg-slate-100 opacity-60 transition">
+          <div class="flex items-center gap-3">
+            <div class="badge-icon-wrap w-12 h-12 rounded-xl bg-slate-200 flex items-center justify-center text-2xl">🤝</div>
+            <div>
+              <h5 class="text-sm font-black font-cinzel text-ocean-dark">Duta Ain Ni Ain</h5>
+              <span class="badge-status text-[10px] font-extrabold text-slate-500 uppercase">Terkunci</span>
+            </div>
+          </div>
+          <p class="text-xs text-slate-700 mt-2">Meraih skor minimal 150 poin atau memenuhi meteran Ain Ni Ain di Pulau 3.</p>
+        </div>
+
+        <div id="badge-card-tokoh" class="p-4 rounded-2xl border-2 border-slate-300 bg-slate-100 opacity-60 transition">
+          <div class="flex items-center gap-3">
+            <div class="badge-icon-wrap w-12 h-12 rounded-xl bg-slate-200 flex items-center justify-center text-2xl">👑</div>
+            <div>
+              <h5 class="text-sm font-black font-cinzel text-ocean-dark">Tokoh Adat Kei</h5>
+              <span class="badge-status text-[10px] font-extrabold text-slate-500 uppercase">Terkunci</span>
+            </div>
+          </div>
+          <p class="text-xs text-slate-700 mt-2">Gelar kehormatan tertinggi setelah membuka ketiga lencana pulau misi.</p>
+        </div>
+      </div>
+
+      <div class="text-right">
+        <button onclick="closeBadgesModal()" class="px-6 py-2 rounded-xl bg-ocean-kei text-white font-extrabold text-xs">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 9. MODAL SERTIFIKAT BUDAYA EVAV (DEFAULT: ANDI TAUFAN)   -->
+  <!-- ======================================================== -->
+  <div id="modal-certificate" class="absolute inset-0 z-50 hidden flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto modal-scroll-area">
+    <div class="max-w-4xl w-full my-auto">
+      <!-- Bar Kontrol Cetak & Edit Nama (Non-Printable) -->
+      <div class="outdoor-panel rounded-2xl p-4 mb-4 flex flex-wrap items-center justify-between gap-3 non-printable">
+        <div class="flex items-center gap-2 flex-grow max-w-md">
+          <label for="input-cert-name" class="text-xs font-extrabold text-ocean-dark whitespace-nowrap">Nama Peserta:</label>
+          <input type="text" id="input-cert-name" value="Andi Taufan" oninput="updateCertNameLive(this.value)" class="flex-grow px-3 py-1.5 rounded-xl border-2 border-adat-emas bg-white text-sm font-bold text-ocean-dark focus:outline-none">
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="window.print()" class="px-5 py-2 rounded-xl bg-adat-emas hover:bg-amber-600 text-white font-extrabold text-xs uppercase tracking-wider shadow-md flex items-center gap-2">
+            <span>🖨️ Cetak Sertifikat (window.print)</span>
+          </button>
+          <button onclick="closeCertificateModal()" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-extrabold text-xs">
+            ✕ Tutup
+          </button>
+        </div>
+      </div>
+
+      <!-- Area Cetak Sertifikat Resmi -->
+      <div id="certificate-print-area" class="bg-[#FFFDF7] rounded-3xl border-8 border-double border-adat-emas p-8 sm:p-12 shadow-2xl relative text-center">
+        <div class="w-full h-2.5 tenun-pattern-bar mb-6"></div>
+
+        <div class="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-amber-100 border border-adat-emas text-adat-emas font-extrabold text-xs uppercase tracking-widest mb-2">
+          <span>⚜️</span> Majelis Pelestari Kearifan Budaya Kepulauan Kei <span>⚜️</span>
+        </div>
+
+        <h2 class="text-2xl sm:text-4xl font-black font-cinzel text-ocean-dark tracking-wide">
+          SERTIFIKAT KELULUSAN BUDAYA EVAV
+        </h2>
+        <p class="text-xs sm:text-sm font-bold font-cinzel text-adat-emas uppercase tracking-widest mt-1">
+          Penjaga Hukum Larvul Ngabal • Sasi Laut • Filosofi Ain Ni Ain
+        </p>
+
+        <p class="text-xs sm:text-sm text-slate-600 italic mt-5">
+          Diberikan dengan penuh kehormatan kepada:
+        </p>
+
+        <div class="my-4">
+          <h3 id="cert-name-display" class="text-2xl sm:text-4xl font-black font-cinzel text-adat-sirih border-b-2 border-dashed border-adat-emas pb-2 inline-block px-10">
+            Andi Taufan
+          </h3>
+        </div>
+
+        <p class="text-xs sm:text-sm text-slate-700 max-w-2xl mx-auto leading-relaxed font-medium">
+          Telah menuntaskan petualangan edukasi interaktif 3D Kepulauan Kei (Maluku Tenggara), menegakkan keadilan musyawarah <strong>Larvul Ngabal</strong>, menjaga kelestarian ekosistem <strong>Teluk Sasi Laut</strong>, serta mengamalkan gotong royong <strong>Maren & Ain Ni Ain</strong>.
+        </p>
+
+        <div class="flex flex-wrap items-center justify-center gap-2.5 my-5">
+          <span class="px-3 py-1 rounded-lg bg-red-50 border border-red-300 text-xs font-extrabold text-adat-sirih">⚖️ Ahli Larvul Ngabal</span>
+          <span class="px-3 py-1 rounded-lg bg-emerald-50 border border-emerald-300 text-xs font-extrabold text-eco-zamrud">🌿 Penjaga Sasi Laut</span>
+          <span class="px-3 py-1 rounded-lg bg-amber-50 border border-amber-300 text-xs font-extrabold text-adat-emas">🤝 Duta Ain Ni Ain</span>
+          <span class="px-3 py-1 rounded-lg bg-sky-50 border border-sky-300 text-xs font-extrabold text-ocean-dark">👑 Tokoh Adat Kei</span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 items-end mt-8 pt-5 border-t border-amber-200 text-xs">
+          <div>
+            <span class="text-slate-500 block text-[10px] mb-6">Tanggal Pengukuhan:</span>
+            <p id="cert-date-display" class="font-extrabold text-slate-800">21 November 2026</p>
+            <span class="text-[10px] text-slate-500">Tanah Evav, Maluku Tenggara</span>
+          </div>
+          <div>
+            <div class="w-16 h-16 rounded-full border-4 border-dashed border-adat-emas mx-auto flex flex-col items-center justify-center bg-amber-50">
+              <span class="text-[10px] font-black font-cinzel text-adat-emas">EVAV 3D</span>
+              <span class="text-sm">⛵</span>
+            </div>
+          </div>
+          <div>
+            <span class="text-slate-500 block text-[10px] mb-6">Dewan Sesepuh Adat:</span>
+            <p class="font-black font-cinzel text-ocean-dark">Rat / Tuan Tan Evav</p>
+            <span class="text-[10px] text-slate-500">Penjaga Amanah Leluhur</span>
+          </div>
+        </div>
+
+        <p class="mt-6 pt-3 border-t border-amber-200/70 text-[11px] font-bold text-slate-500">
+          Game ini dibuat oleh <span class="text-adat-emas font-extrabold">Tim Edukei Studio</span>
+        </p>
+      </div>
+    </div>
+  </div>
+  </div><!-- /#app-shell -->
+
+  <!-- Scripts -->
+  <script src="audio.js"></script>
+  <script src="world3d.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

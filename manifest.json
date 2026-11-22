@@ -1,0 +1,26 @@
+{
+  "name": "Jejak Evav 3D: Penjaga Kearifan Kei",
+  "short_name": "Jejak Evav 3D",
+  "description": "Game edukasi interaktif 3D budaya Kepulauan Kei (Larvul Ngabal, Sasi Laut, Maren & Ain Ni Ain) yang dapat dimainkan offline.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#E0F2FE",
+  "theme_color": "#0284C7",
+  "lang": "id",
+  "icons": [
+    {
+      "src": "./icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

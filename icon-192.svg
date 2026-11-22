@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E0F2FE"/>
+      <stop offset="60%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#0284C7"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="38" fill="url(#sky)"/>
+  <circle cx="144" cy="48" r="22" fill="#FBBF24"/>
+  <path d="M0 132 Q48 118 96 132 T192 132 L192 192 L0 192 Z" fill="#0369A1"/>
+  <path d="M0 148 Q48 136 96 148 T192 148 L192 192 L0 192 Z" fill="#075985"/>
+  <!-- Perahu Belang Merah Putih Emas -->
+  <path d="M28 110 Q42 136 96 136 Q150 136 168 92 C156 108 140 120 120 120 L62 120 C45 120 35 114 28 110 Z" fill="#B91C1C" stroke="#7F1D1D" stroke-width="2"/>
+  <path d="M44 122 Q96 130 148 116" stroke="#FFFDF7" stroke-width="4" fill="none"/>
+  <path d="M52 127 Q96 134 140 123" stroke="#D97706" stroke-width="3" fill="none"/>
+  <polygon points="168,92 150,82 158,98" fill="#D97706"/>
+  <circle cx="168" cy="90" r="4" fill="#FDE047"/>
+  <!-- Dayung -->
+  <line x1="68" y1="115" x2="58" y2="146" stroke="#78350F" stroke-width="3.5" stroke-linecap="round"/>
+  <line x1="96" y1="115" x2="86" y2="146" stroke="#78350F" stroke-width="3.5" stroke-linecap="round"/>
+  <line x1="124" y1="115" x2="114" y2="146" stroke="#78350F" stroke-width="3.5" stroke-linecap="round"/>
+</svg>

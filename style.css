@@ -1,0 +1,192 @@
+/* ========================================================
+   JEJAK EVAV 3D: OUTDOOR HIGH-CONTRAST LIGHT MODE STYLES
+   + MOBILE & TABLET RESPONSIVE TOUCH OPTIMIZATIONS
+   ======================================================== */
+
+html, body {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  background-color: #E0F2FE;
+}
+
+#app-shell {
+  position: relative;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  background-color: #E0F2FE;
+}
+
+#webgl-container,
+#webgl-container canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+.modal-scroll-area {
+  -webkit-overflow-scrolling: touch;
+}
+
+.safe-bottom-pad {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+/* 0. Orientasi Landscape Konsisten di HP Portrait (Putar seluruh wadah app-shell 90deg) */
+#splash-video-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#opening-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+@media (max-width: 767px) and (orientation: portrait) {
+  #app-shell {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 100dvh;
+    height: 100vw;
+    transform: translate(-50%, -50%) rotate(90deg);
+    transform-origin: center center;
+  }
+}
+
+/* Penyesuaian skala & tata letak nyaman untuk Tablet & HP Landscape */
+@media (max-height: 500px) {
+  .compact-hud-header {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+  }
+  .dpad-btn {
+    width: 2.25rem !important;
+    height: 2.25rem !important;
+    font-size: 0.85rem !important;
+  }
+}
+
+/* 1. Motif Tenun Ikat Kei (SVG Pattern) */
+.tenun-pattern-bar {
+  background-color: #D97706;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='10' viewBox='0 0 24 10'%3E%3Cpolygon points='12,1 18,5 12,9 6,5' fill='%23B91C1C' stroke='%23FEF08A' stroke-width='0.8'/%3E%3Ccircle cx='12' cy='5' r='1.2' fill='%23FFFDF7'/%3E%3Cpolygon points='0,5 3,1 3,9' fill='%230284C7'/%3E%3Cpolygon points='24,5 21,1 21,9' fill='%230284C7'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-size: 24px 10px;
+}
+
+/* 2. Outdoor High-Contrast Glass Card */
+.outdoor-panel {
+  background: rgba(255, 253, 247, 0.96);
+  border: 2px solid #D97706;
+  box-shadow: 0 12px 28px -6px rgba(12, 74, 110, 0.22);
+}
+
+/* 3. Pilihan Jawaban & Interaksi */
+.quiz-option-card {
+  transition: all 0.18s ease-in-out;
+  cursor: pointer;
+}
+
+.quiz-option-card:hover:not(:disabled) {
+  border-color: #0284C7;
+  background-color: #E0F2FE;
+  transform: translateY(-1px);
+}
+
+.quiz-option-card.selected-correct {
+  border-color: #059669 !important;
+  background-color: #D1FAE5 !important;
+  color: #064E3B !important;
+}
+
+.quiz-option-card.selected-wrong {
+  border-color: #B91C1C !important;
+  background-color: #FEE2E2 !important;
+  color: #7F1D1D !important;
+}
+
+/* 4. Virtual D-Pad Sentuh (Touch & Mobile) */
+.dpad-btn {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  transition: transform 0.1s ease, background-color 0.1s ease;
+}
+
+.dpad-btn:active {
+  transform: scale(0.92);
+  background-color: #0284C7 !important;
+  color: #FFFFFF !important;
+}
+
+/* 5. Lencana Adat Unlocked Style */
+.badge-unlocked {
+  opacity: 1 !important;
+  border-color: #D97706 !important;
+  background: linear-gradient(135deg, #FEF9EC 0%, #FFFDF7 100%) !important;
+  box-shadow: 0 8px 18px -4px rgba(217, 119, 6, 0.25) !important;
+}
+
+.badge-unlocked .badge-icon-wrap {
+  background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%) !important;
+}
+
+.badge-unlocked .badge-status {
+  color: #059669 !important;
+}
+
+/* 6. Cetak Sertifikat Kelulusan Budaya (window.print) */
+@media print {
+  #webgl-container,
+  #splash-screen,
+  header,
+  #hud-overlay,
+  .non-printable,
+  #modal-island1,
+  #modal-island2,
+  #modal-island3,
+  #modal-badges {
+    display: none !important;
+  }
+
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #modal-certificate {
+    position: static !important;
+    display: block !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  #certificate-print-area {
+    border: 6px double #D97706 !important;
+    box-shadow: none !important;
+    margin: 0 auto !important;
+    max-width: 920px !important;
+    width: 100% !important;
+    padding: 36px !important;
+    page-break-inside: avoid;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
